@@ -1,0 +1,5 @@
+data/audios
+data/transcripciones
+
+.venv/
+venv/
