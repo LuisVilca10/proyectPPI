@@ -49,6 +49,6 @@ if __name__ == "__main__":
     verificar_ffmpeg()
     modelo = cargar_modelo() #podemos especifcar que modelo usar "cargar_modelo("base")"
     audio_dir = "../data/audios"
-    output_dir = "../data/transcripciones"
+    output_dir = "../transcripciones/audios"
     procesar_audios(audio_dir, output_dir, modelo)
     print("🎉 Transcripciones completadas.")

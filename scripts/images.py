@@ -1,41 +1,50 @@
 import cv2
 import pytesseract
 import numpy as np
+import os
 
-imagen = cv2.imread('../data/images/imagen.png')
-gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
-umbral = cv2.adaptiveThreshold(gris, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 15, 10)
+# Preprocesamiento global para documentos escaneados o fotografiados
+def preprocesar_documento_completo(imagen):
+    gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
+    reescalada = cv2.resize(gris, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_LINEAR)
+    filtrada = cv2.bilateralFilter(reescalada, 9, 75, 75)
+    umbral = cv2.adaptiveThreshold(filtrada, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                   cv2.THRESH_BINARY, 31, 10)
+    invertida = cv2.bitwise_not(umbral)
+    return invertida
 
-contornos, _ = cv2.findContours(umbral, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+# Extraer texto de una imagen completa preprocesada
+def extraer_texto_completo(imagen, lang='spa'):
+    imagen_pre = preprocesar_documento_completo(imagen)
+    texto = pytesseract.image_to_string(imagen_pre, lang=lang, config='--psm 6')  # PSM 6 = bloques uniformes de texto
+    texto = '\n'.join([line.strip() for line in texto.split('\n') if line.strip() != ''])
+    return texto
 
-# Calcular anchos y altos
-anchos = []
-altos = []
-for cnt in contornos:
-    x, y, w, h = cv2.boundingRect(cnt)
-    anchos.append(w)
-    altos.append(h)
+# Procesar todas las imágenes en una carpeta y guardar los resultados .txt
+def ocr_en_carpeta(ruta_carpeta, carpeta_salida="../transcripciones/images"):
+    os.makedirs(carpeta_salida, exist_ok=True)
+    archivos = [f for f in os.listdir(ruta_carpeta) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
 
-p_anchos = np.percentile(anchos, 40)
-p_altos = np.percentile(altos, 40)
+    for archivo in sorted(archivos):
+        ruta_imagen = os.path.join(ruta_carpeta, archivo)
+        imagen = cv2.imread(ruta_imagen)
+        if imagen is None:
+            print(f"[AVISO] No se pudo cargar: {archivo}")
+            continue
 
-bloques_texto = []
-for cnt in contornos:
-    x, y, w, h = cv2.boundingRect(cnt)
-    area = w * h
-    if w > p_anchos and h > p_altos and area > 500:  # Agregamos área mínima
-        roi = imagen[y:y+h, x:x+w]
-        bloques_texto.append((x, y, roi))
+        print(f"[INFO] Procesando: {archivo}")
+        texto = extraer_texto_completo(imagen)
 
-bloques_texto.sort(key=lambda b: b[1])
+        nombre_salida = os.path.splitext(archivo)[0] + ".txt"
+        ruta_salida = os.path.join(carpeta_salida, nombre_salida)
 
-texto_final = ""
-for i, (x, y, roi) in enumerate(bloques_texto):
-    texto_bloque = pytesseract.image_to_string(roi, lang='spa')
-    texto_final += texto_bloque.strip() + "\n"
+        with open(ruta_salida, "w", encoding="utf-8") as f:
+            f.write(texto)
 
-# Limpieza de saltos de línea y espacios en blanco
-texto_final = '\n'.join([line.strip() for line in texto_final.split('\n') if line.strip() != ''])
+        print(f"[✔] Transcripción guardada: {ruta_salida}")
 
-print("=== Texto final limpio y estructurado ===")
-print(texto_final)
+    print(f"[✅] OCR completo. Todas las transcripciones están en '{carpeta_salida}'.")
+
+# Ejecutar
+if __name__ == "__main__":
+    ocr_en_carpeta("../data/images")
