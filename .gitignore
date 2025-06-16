@@ -1,5 +1,5 @@
-data/audios
-data/transcripciones
+data
+transcripciones
 
 .venv/
 venv/
