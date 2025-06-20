@@ -24,7 +24,7 @@ def transcribir_audio(modelo, input_path):
 
 #Guarda el texto transcrito en un archivo .txt
 def guardar_transcripcion(output_dir, filename, texto):
-    output_filename = os.path.splitext(filename)[0] + ".txt"
+    output_filename = os.path.splitext(filename)[0] + "whispermediun" + ".txt"
     output_path = os.path.join(output_dir, output_filename)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(texto)
