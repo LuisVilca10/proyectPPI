@@ -35,7 +35,7 @@ def ocr_en_carpeta(ruta_carpeta, carpeta_salida="../transcripciones/images"):
         print(f"[INFO] Procesando: {archivo}")
         texto = extraer_texto_completo(imagen)
 
-        nombre_salida = os.path.splitext(archivo)[0] + "tesseract" + ".txt"
+        nombre_salida = os.path.splitext(archivo)[0] + "opencv+tesseract" + ".txt"
         ruta_salida = os.path.join(carpeta_salida, nombre_salida)
 
         with open(ruta_salida, "w", encoding="utf-8") as f:
